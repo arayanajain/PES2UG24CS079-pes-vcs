@@ -72,6 +72,7 @@ int index_status(const Index *index) {
     int unstaged_count = 0;
     for (int i = 0; i < index->count; i++) {
         struct stat st;
+        if (st.st_size < 0) return -1;
         if (stat(index->entries[i].path, &st) != 0) {
             printf("  deleted:    %s\n", index->entries[i].path);
             unstaged_count++;
