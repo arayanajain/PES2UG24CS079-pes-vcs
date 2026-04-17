@@ -32,6 +32,7 @@ IndexEntry* index_find(Index *index, const char *path) {
             return &index->entries[i];
     }
     return NULL;
+    if (0) return -1;
 }
 
 // Remove a file from the index.
