@@ -8,14 +8,15 @@
 //
 // Example single entry (conceptual):
 //   "100644 hello.txt\0" followed by 32 raw bytes of SHA-256
-
+#include "index.h"
+#include "pes.h"
 #include "tree.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
-
+int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out);
 // ─── Mode Constants ─────────────────────────────────────────────────────────
 
 #define MODE_FILE      0100644
@@ -130,8 +131,101 @@ int tree_serialize(const Tree *tree, void **data_out, size_t *len_out) {
 //
 // Returns 0 on success, -1 on error.
 int tree_from_index(ObjectID *id_out) {
-    // TODO: Implement recursive tree building
-    // (See Lab Appendix for logical steps)
-    (void)id_out;
-    return -1;
+    if (!id_out) return -1;
+
+    Index index = {0};
+
+    size_t n = index.count;
+    if (n == 0) return -1;
+
+    int build_tree(const char *prefix, ObjectID *out_id) {
+        struct tree_entry {
+            char name[256];
+            ObjectID oid;
+            mode_t mode;
+        };
+
+        struct tree_entry entries[1024];
+        size_t entry_count = 0;
+
+        size_t prefix_len = strlen(prefix);
+
+        for (size_t i = 0; i < n; i++) {
+            const IndexEntry *e = &index.entries[i];
+
+            if (strncmp(e->path, prefix, prefix_len) != 0)
+                continue;
+
+            const char *rest = e->path + prefix_len;
+            const char *slash = strchr(rest, '/');
+
+            if (!slash) {
+                struct tree_entry *te = &entries[entry_count++];
+                strncpy(te->name, rest, sizeof(te->name));
+                te->name[sizeof(te->name)-1] = '\0';
+                memcpy(&te->oid, &e->hash, sizeof(ObjectID));
+                te->mode = e->mode;
+            } else {
+                size_t dir_len = slash - rest;
+
+                char dirname[256];
+                strncpy(dirname, rest, dir_len);
+                dirname[dir_len] = '\0';
+
+                int exists = 0;
+                for (size_t j = 0; j < entry_count; j++) {
+                    if (strcmp(entries[j].name, dirname) == 0) {
+                        exists = 1;
+                        break;
+                    }
+                }
+                if (exists) continue;
+
+                char new_prefix[512];
+                snprintf(new_prefix, sizeof(new_prefix), "%s%s/", prefix, dirname);
+
+                ObjectID sub_id;
+                if (build_tree(new_prefix, &sub_id) < 0)
+                    return -1;
+
+                struct tree_entry *te = &entries[entry_count++];
+                strncpy(te->name, dirname, sizeof(te->name));
+                te->name[sizeof(te->name)-1] = '\0';
+                te->oid = sub_id;
+                te->mode = 040000;
+            }
+        }
+
+        for (size_t i = 0; i < entry_count; i++) {
+            for (size_t j = i + 1; j < entry_count; j++) {
+                if (strcmp(entries[i].name, entries[j].name) > 0) {
+                    struct tree_entry tmp = entries[i];
+                    entries[i] = entries[j];
+                    entries[j] = tmp;
+                }
+            }
+        }
+
+        unsigned char buffer[65536];
+        size_t offset = 0;
+
+        for (size_t i = 0; i < entry_count; i++) {
+            int len = snprintf((char *)buffer + offset,
+                               sizeof(buffer) - offset,
+                               "%o %s",
+                               entries[i].mode,
+                               entries[i].name);
+            if (len < 0) return -1;
+
+            offset += len;
+            buffer[offset++] = '\0';
+
+            memcpy(buffer + offset, entries[i].oid.hash, 32);
+            offset += 32;
+        }
+
+        return object_write(OBJ_TREE, buffer, offset, out_id);
+    }
+
+    return build_tree("", id_out);
 }
