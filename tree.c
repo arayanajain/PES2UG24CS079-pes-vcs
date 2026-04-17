@@ -206,7 +206,7 @@ int tree_from_index(ObjectID *id_out) {
             }
         }
 
-        unsigned char buffer[65536];
+        unsigned char buffer[65536]={0};
         size_t offset = 0;
 
         for (size_t i = 0; i < entry_count; i++) {
