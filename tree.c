@@ -148,6 +148,7 @@ int tree_from_index(ObjectID *id_out) {
         struct tree_entry entries[1024];
         size_t entry_count = 0;
 
+	if (!prefix) return -1;
         size_t prefix_len = strlen(prefix);
 
         for (size_t i = 0; i < n; i++) {
