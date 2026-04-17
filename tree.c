@@ -221,6 +221,7 @@ int tree_from_index(ObjectID *id_out) {
             offset += len;
             buffer[offset++] = '\0';
 
+	    if (offset + 32 >= sizeof(buffer)) return -1;
             memcpy(buffer + offset, entries[i].oid.hash, 32);
             offset += 32;
         }
