@@ -215,7 +215,7 @@ int tree_from_index(ObjectID *id_out) {
                                "%o %s",
                                entries[i].mode,
                                entries[i].name);
-            if (len < 0) return -1;
+            if (len <= 0) return -1;
 
             offset += len;
             buffer[offset++] = '\0';
