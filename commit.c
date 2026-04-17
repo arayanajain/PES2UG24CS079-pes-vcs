@@ -236,6 +236,7 @@ int commit_create(const char *message, ObjectID *commit_id_out) {
     offset += snprintf(buf + offset, sizeof(buf) - offset,
                        "\n%s\n", message);
 
+    if (offset <= 0) return -1;
     if (object_write(OBJ_COMMIT, buf, offset, commit_id_out) < 0) {
     printf("object_write failed\n");
     return -1;
