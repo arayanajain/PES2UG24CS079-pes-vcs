@@ -242,6 +242,7 @@ int index_add(Index *index, const char *path) {
     struct stat st;
     if (stat(path, &st) < 0) return -1;
 
+    if (index->count < 0) return -1;
     IndexEntry *e = index_find(index, path);
     if (!e) {
         if (index->count >= MAX_INDEX_ENTRIES) return -1;
