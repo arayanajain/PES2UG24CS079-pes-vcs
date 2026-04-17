@@ -213,6 +213,7 @@ int index_save(const Index *index) {
 //
 // Returns 0 on success, -1 on error.
 int index_add(Index *index, const char *path) {
+    if (!index || !path) return -1;
     FILE *f = fopen(path, "rb");
     if (!f) return -1;
 
