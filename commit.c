@@ -194,8 +194,57 @@ int head_update(const ObjectID *new_commit) {
 //
 // Returns 0 on success, -1 on error.
 int commit_create(const char *message, ObjectID *commit_id_out) {
-    // TODO: Implement commit creation
-    // (See Lab Appendix for logical steps)
-    (void)message; (void)commit_id_out;
+    if (!message) return -1;
+    if (!message || !commit_id_out) return -1;
+
+    ObjectID tree_id;
+    if (tree_from_index(&tree_id) < 0) {
+    printf("tree failed\n");
     return -1;
+}
+
+    ObjectID parent_id;
+    int has_parent = (head_read(&parent_id) == 0);
+
+    const char *author = pes_author();
+    if (!author) return -1;
+
+    char buf[4096];
+    int offset = 0;
+
+    char tree_hex[65];
+    for (int i = 0; i < 32; i++)
+        sprintf(tree_hex + i * 2, "%02x", tree_id.hash[i]);
+    tree_hex[64] = '\0';
+
+    offset += snprintf(buf + offset, sizeof(buf) - offset,
+                   "author %s %ld\n", author, time(NULL));
+
+    if (has_parent) {
+        char parent_hex[65];
+        for (int i = 0; i < 32; i++)
+            sprintf(parent_hex + i * 2, "%02x", parent_id.hash[i]);
+        parent_hex[64] = '\0';
+
+        offset += snprintf(buf + offset, sizeof(buf) - offset,
+                           "parent %s\n", parent_hex);
+    }
+
+    offset += snprintf(buf + offset, sizeof(buf) - offset,
+                       "author %s\n", author);
+
+    offset += snprintf(buf + offset, sizeof(buf) - offset,
+                       "\n%s\n", message);
+
+    if (object_write(OBJ_COMMIT, buf, offset, commit_id_out) < 0) {
+    printf("object_write failed\n");
+    return -1;
+}
+
+    if (head_update(commit_id_out) < 0) {
+    printf("head update failed\n");
+    return -1;
+}
+
+    return 0;
 }
