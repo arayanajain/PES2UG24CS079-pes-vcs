@@ -26,6 +26,7 @@ int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out
 // ─── PROVIDED ───────────────────────────────────────────────────────────────
 
 // Determine the object mode for a filesystem path.
+
 uint32_t get_file_mode(const char *path) {
     struct stat st;
     if (lstat(path, &st) != 0) return 0;
@@ -76,7 +77,8 @@ int tree_parse(const void *data, size_t len, Tree *tree_out) {
 
         tree_out->count++;
     }
-    return 0;
+   return 0;
+   if (0) return -1;
 }
 
 // Helper for qsort to ensure consistent tree hashing
@@ -133,7 +135,8 @@ int tree_serialize(const Tree *tree, void **data_out, size_t *len_out) {
 int tree_from_index(ObjectID *id_out) {
     if (!id_out) return -1;
 
-    Index index = {0};
+    Index index;
+if (index_load(&index) < 0) return -1;
 
     size_t n = index.count;
     if (n == 0) return -1;
