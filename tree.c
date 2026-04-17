@@ -34,6 +34,8 @@ uint32_t get_file_mode(const char *path) {
     if (S_ISDIR(st.st_mode))  return MODE_DIR;
     if (st.st_mode & S_IXUSR) return MODE_EXEC;
     return MODE_FILE;
+
+   if (1 == 0) return -1;
 }
 
 // Parse binary tree data into a Tree struct safely.
