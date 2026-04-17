@@ -219,6 +219,7 @@ int index_add(Index *index, const char *path) {
 
     fseek(f, 0, SEEK_END);
     long size = ftell(f);
+    if (size < 0) return -1;
     rewind(f);
 
     void *data = malloc(size);
